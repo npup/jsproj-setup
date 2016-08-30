@@ -5,7 +5,8 @@ shell script for setting up a js project with webpack, babel, sass, react, mocha
 ## Usage:
 
 	$ git clone git@github.com:npup/jsproj-setup.git
-	$ cd jsproj-setup
+	$ mkdir -p myproj && cp jsproj-setup/jsproj-setup.sh myproj/
+	$ cd myproj
 	$ sh jsproj-setup.sh
 	$ subl .
 	$ npm run test
