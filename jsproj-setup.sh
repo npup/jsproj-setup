@@ -145,6 +145,6 @@ www' > .gitignore
 echo '!.gitignore' > www/.gitignore
 
 # guard
-echo "echo '\n  ### Script $0 already executed. Only re-execute of you know what you are doing (so.. no).\n'; exit 1;\n" > "$0.tmp"
+echo "echo '\n  ### Script $0 already executed. Only re-execute if you know what you are doing (so.. no).\n'; exit 1;\n" > "$0.tmp"
 cat $0 >> "$0.tmp"
 mv "$0.tmp" $0
