@@ -119,7 +119,7 @@ npm i babel-core babel-loader babel-preset-es2015 --save-dev
 echo '{"plugins": [], "presets": ["es2015", "react"]}' > .babelrc
 
 # react
-npm i react react-dom react-router
+npm i react react-dom react-router --save
 npm i babel-preset-react --save-dev
 
 
