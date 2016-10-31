@@ -2,8 +2,8 @@
 ## directories
 mkdir -p www test src/style src/images src/js/components
 ## js
-echo 'alert("hello from `src/js/app.js`");
-' > src/js/app.js
+echo 'alert("hello from `src/js/index.js`");
+' > src/js/index.js
 ## css
 echo 'html, html * { box-sizing: border-box; }
 ' > src/style/main.scss
@@ -21,19 +21,43 @@ echo '<!DOCTYPE html>
 </body>
 </html>' > src/index.html
 
+echo 'var express = require("express")
+  , path = require("path")
+  , app = express()
+  , DEV_PORT = 3001
+  , PRODUCTION = "production"==process.env.NODE_ENV
+  , PORT = (PRODUCTION ? process.env.PORT : DEV_PORT) || DEV_PORT
+  , root = path.join(__dirname, "../www")
+  , indexFile = path.join(root, "index.html");
+
+app.use(express.static(root));
+
+app.get("*", function (req, res) {
+  res.sendFile(indexFile);
+});
+
+app.listen(PORT, function () {
+  console.log("-- express server running at port %s", PORT);
+});
+' > src/server.js
+
 # npm
 npm init -y
 ## adding scripts
 npm i https://github.com/coleww/npm-add-script.git --save-dev
-node node_modules/npm-add-script/cmd.js -f -k test -v "export NODE_ENV=dev; npm run build-dev && mocha -u bdd 'test/**/*.@(js)'"
-node node_modules/npm-add-script/cmd.js -k build -v "export NODE_ENV=production; webpack"
-node node_modules/npm-add-script/cmd.js -k build-dev -v "export NODE_ENV=dev; webpack"
-node node_modules/npm-add-script/cmd.js -k start -v "export NODE_ENV=production; webpack-dev-server"
-node node_modules/npm-add-script/cmd.js -k start-dev -v "export NODE_ENV=dev; webpack-dev-server"
+node node_modules/npm-add-script/cmd.js -k env -v "env"
+node node_modules/npm-add-script/cmd.js -k clean -v "rm -rf www/*"
+node node_modules/npm-add-script/cmd.js -f -k "test" -v "mocha --compilers js:babel-core/register -u bdd 'test/**/*.@(js)'"
+node node_modules/npm-add-script/cmd.js -k build -v "export NODE_ENV=production; webpack -p"
+node node_modules/npm-add-script/cmd.js -k start -v "export NODE_ENV=production; npm run build && node src/server.js"
+node node_modules/npm-add-script/cmd.js -k dev -v "export NODE_ENV=dev; webpack-dev-server --content-base www/"
+
+#express js
+npm i express --save
 
 # webpack
 npm i webpack webpack-dev-server --save-dev
-npm i extract-text-webpack-plugin html-webpack-plugin file-loader --save-dev
+npm i extract-text-webpack-plugin html-webpack-plugin copy-webpack-plugin file-loader --save
 echo '/* eslint-env node */
 /* eslint-disable no-console */
 
@@ -44,16 +68,17 @@ console.log("NODE_ENV production: %s", PRODUCTION);
 
 var webpack = require("webpack")
   , ExtractTextPlugin = require("extract-text-webpack-plugin")
-  , HtmlWebpackPlugin = require("html-webpack-plugin");
+  , HtmlWebpackPlugin = require("html-webpack-plugin")
+  , CopyWebpackPlugin = require("copy-webpack-plugin");
 
 module.exports = {
   "devtool": PRODUCTION ? null : "sourcemap"
   , "entry": {
-      "app": "./src/js/app.js"
+      "app": "./src/js/index.js"
     }
   , "output": {
       "path": __dirname+"/www/"
-      , "publicPath": "http://localhost:"+PORT+"/"
+      , "publicPath": PRODUCTION ? "/" : "http://localhost:"+PORT+"/"
       , "filename": "app.js"
     }
   , "module": {
@@ -86,30 +111,21 @@ module.exports = {
           "compressor": { "warnings": false }
           , "test": PRODUCTION ? /\.js/ : /^$/
         })
+      , new webpack.DefinePlugin({
+            "process.env": {
+              "NODE_ENV": JSON.stringify(process.env.NODE_ENV)
+            }
+        })
+      , new CopyWebpackPlugin([
+          { "from": "./src/images/apple-touch-icon.png" }
+        ])
     ]
   , "devServer": {
       "inline": true
       , "port": PORT
+      , "historyApiFallback": { "index": "index.html" }
     }
 };' > webpack.config.js
-echo '/* eslint-env node */
-/* eslint-disable no-console */
-
-var webpack = require("webpack")
-  , WebpackDevServer = require("webpack-dev-server")
-  , config = require("./webpack.config");
-
-var host = "0.0.0.0"
-  , PORT = 3001;
-
-new WebpackDevServer(webpack(config), {
-  "publicPath": config.output.publicPath
-  , "historyApiFallback": true
-}).listen(PORT, host, function handler(err) {
-  if (err) { console.log(err); }
-  else { console.log("Listening at " + host + ":" + PORT); }
-});
-' > browser-history-server.js
 
 # css with sass
 npm i css-loader style-loader sass-loader --save-dev
@@ -148,3 +164,14 @@ echo '!.gitignore' > www/.gitignore
 echo "echo '\n  ### Script $0 already executed. Only re-execute if you know what you are doing (so.. no).\n'; exit 1;\n" > "$0.tmp"
 cat $0 >> "$0.tmp"
 mv "$0.tmp" $0
+
+
+echo '\nCommands:
+---------------------
+npm test         # run tests
+npm run dev      # start hotloading development environment
+npm run env      # show env variables
+npm run clean    # clean dist directory (www)
+npm run build    # run build for production
+npm start        # start production server
+'
