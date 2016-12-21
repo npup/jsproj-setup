@@ -71,6 +71,16 @@ var webpack = require("webpack")
   , HtmlWebpackPlugin = require("html-webpack-plugin")
   , CopyWebpackPlugin = require("copy-webpack-plugin");
 
+// plugins
+var cssExtractor = new ExtractTextPlugin("main.css")
+  , htmlTemplate = new HtmlWebpackPlugin({
+      "template": "./src/index.html"
+      , "filename": "index.html"
+    })
+  , fileCopy = new CopyWebpackPlugin([
+      { "from": "./src/images/apple-touch-icon.png" }
+    ]);
+
 module.exports = {
   "devtool": PRODUCTION ? null : "sourcemap"
   , "entry": {
@@ -85,7 +95,7 @@ module.exports = {
     "loaders": [
       {
           "test": /\.s?css$/
-          , "loader": ExtractTextPlugin.extract("style", "css!sass")
+          , "loader": cssExtractor.extract("style", "css!sass")
         }
       , {
           "test": /.jsx?$/
@@ -102,11 +112,8 @@ module.exports = {
     ]
   }
   , "plugins": [
-      new ExtractTextPlugin("main.css")
-      , new HtmlWebpackPlugin({
-          "template": "./src/index.html"
-          , "filename": "index.html"
-        })
+      cssExtractor
+      , htmlTemplate
       , new webpack.optimize.UglifyJsPlugin({
           "compressor": { "warnings": false }
           , "test": PRODUCTION ? /\.js/ : /^$/
@@ -116,9 +123,7 @@ module.exports = {
               "NODE_ENV": JSON.stringify(process.env.NODE_ENV)
             }
         })
-      , new CopyWebpackPlugin([
-          { "from": "./src/images/apple-touch-icon.png" }
-        ])
+      , fileCopy
     ]
   , "devServer": {
       "inline": true
