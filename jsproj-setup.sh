@@ -133,7 +133,7 @@ module.exports = {
 };' > webpack.config.js
 
 # css with sass
-npm i css-loader style-loader sass-loader --save-dev
+npm i node-sass css-loader style-loader sass-loader --save-dev
 
 # babel
 npm i babel-core babel-loader babel-preset-es2015 --save-dev
