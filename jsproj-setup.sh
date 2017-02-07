@@ -1,8 +1,15 @@
 # project structure
 ## directories
-mkdir -p www test src/style src/images src/js/components
+mkdir -p www test src/assets src/style src/js/components
 ## js
-echo 'alert("hello from `src/js/index.js`");
+echo 'import "../style/main.scss";
+import React from "react";
+import ReactDOM from "react-dom";
+
+const thisFileName = "src/js/index.js";
+const App = props => <h1>Hello from { props.file }</h1>;
+
+ReactDOM.render(<App file={ thisFileName } />, document.getElementById("app"));
 ' > src/js/index.js
 ## css
 echo 'html, html * { box-sizing: border-box; }
@@ -12,7 +19,7 @@ echo '<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title></title>
 </head>
 
@@ -50,86 +57,84 @@ node node_modules/npm-add-script/cmd.js -k clean -v "rm -rf www/*"
 node node_modules/npm-add-script/cmd.js -f -k "test" -v "mocha --compilers js:babel-core/register -u bdd 'test/**/*.@(js)'"
 node node_modules/npm-add-script/cmd.js -k build -v "export NODE_ENV=production; webpack -p"
 node node_modules/npm-add-script/cmd.js -k start -v "export NODE_ENV=production; npm run build && node src/server.js"
-node node_modules/npm-add-script/cmd.js -k dev -v "export NODE_ENV=dev; webpack-dev-server --content-base www/"
+node node_modules/npm-add-script/cmd.js -k dev -v "export NODE_ENV=dev; webpack-dev-server"
 
 #express js
 npm i express --save
 
 # webpack
-npm i webpack webpack-dev-server --save-dev
-npm i extract-text-webpack-plugin html-webpack-plugin copy-webpack-plugin file-loader --save
+npm i webpack@2 webpack-dev-server@2 --save
+npm i html-webpack-plugin copy-webpack-plugin file-loader --save
 echo '/* eslint-env node */
 /* eslint-disable no-console */
 
-var PRODUCTION = "production" == process.env.NODE_ENV
-  , PORT = 3000;
+const path = require("path")
+  , webpack = require("webpack");
+
+const HtmlWebpackPlugin = require("html-webpack-plugin")
+  , CopyWebpackPlugin = require("copy-webpack-plugin");
+
+
+const PRODUCTION = "production" == process.env.NODE_ENV
+  , DEV_SERVER_PORT = 3000;
 
 console.log("NODE_ENV production: %s", PRODUCTION);
 
-var webpack = require("webpack")
-  , ExtractTextPlugin = require("extract-text-webpack-plugin")
-  , HtmlWebpackPlugin = require("html-webpack-plugin")
-  , CopyWebpackPlugin = require("copy-webpack-plugin");
-
-// plugins
-var cssExtractor = new ExtractTextPlugin("main.css")
-  , htmlTemplate = new HtmlWebpackPlugin({
-      "template": "./src/index.html"
-      , "filename": "index.html"
-    })
-  , fileCopy = new CopyWebpackPlugin([
-      { "from": "./src/images/apple-touch-icon.png" }
-    ]);
-
 module.exports = {
-  "devtool": PRODUCTION ? null : "sourcemap"
+
+  "devtool": PRODUCTION ? false : "sourcemap"
+
+  , "context": path.resolve(__dirname, "./src")
+
   , "entry": {
-      "app": "./src/js/index.js"
+      "app": "./js/index.js"
     }
+
   , "output": {
-      "path": __dirname+"/www/"
-      , "publicPath": PRODUCTION ? "/" : "http://localhost:"+PORT+"/"
-      , "filename": "app.js"
+      "path": path.resolve(__dirname, "./www")
+      , "filename": "[name].js"
     }
+
   , "module": {
-    "loaders": [
-      {
-          "test": /\.s?css$/
-          , "loader": cssExtractor.extract("style", "css!sass")
-        }
-      , {
-          "test": /.jsx?$/
-          , "loader": "babel-loader"
+      "rules": [
+        {
+          "test": /\.scss$/
+          , "use": [
+              "style-loader"
+              , "css-loader"
+              , "sass-loader"
+            ]
           , "exclude": /node_modules/
+        }
+        ,  {
+          "test": /\.jsx?$/
+          , "loader": "babel-loader"
           , "query": {
-            "presets": ["es2015", "react"]
-          }
+              "presets": ["es2015", "react"]
+            }
+          , "exclude": /node_modules/
         }
-      , {
-          "test": /\.(png|jpe?g|gif)$/
-          , "loader": "file?context=src&name=[path][name].[ext]"
-        }
-    ]
-  }
+      ]
+    }
   , "plugins": [
-      cssExtractor
-      , htmlTemplate
-      , new webpack.optimize.UglifyJsPlugin({
-          "compressor": { "warnings": false }
-          , "test": PRODUCTION ? /\.js/ : /^$/
-        })
-      , new webpack.DefinePlugin({
+       new HtmlWebpackPlugin({ "template": "./index.html" })
+       , new webpack.DefinePlugin({
             "process.env": {
               "NODE_ENV": JSON.stringify(process.env.NODE_ENV)
             }
         })
-      , fileCopy
+      , new CopyWebpackPlugin([
+          { "from": "./assets", "to": "./assets" }
+        ])
     ]
+
   , "devServer": {
-      "inline": true
-      , "port": PORT
+      "port": DEV_SERVER_PORT
+      , "contentBase": path.resolve(__dirname, "./www")
       , "historyApiFallback": { "index": "index.html" }
+      , "inline": true
     }
+
 };' > webpack.config.js
 
 # css with sass
@@ -137,7 +142,7 @@ npm i node-sass css-loader style-loader sass-loader --save-dev
 
 # babel
 npm i babel-core babel-loader babel-preset-es2015 --save-dev
-echo '{"plugins": [], "presets": ["es2015", "react"]}' > .babelrc
+echo '{ "plugins": [], "presets": ["es2015"] }' > .babelrc
 
 # react
 npm i react react-dom react-router --save
@@ -147,7 +152,7 @@ npm i babel-preset-react --save-dev
 # test
 npm i mocha proclaim --save-dev
 echo '
-var assert = require("proclaim");
+import assert from "proclaim";
 
 describe("module", function () {
   it("should have tests", function () {
