@@ -132,7 +132,6 @@ module.exports = {
       "port": DEV_SERVER_PORT
       , "contentBase": path.resolve(__dirname, "./www")
       , "historyApiFallback": { "index": "index.html" }
-      , "inline": true
     }
 
 };' > webpack.config.js
