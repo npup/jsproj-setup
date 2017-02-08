@@ -99,11 +99,7 @@ module.exports = {
       "rules": [
         {
           "test": /\.scss$/
-          , "use": [
-              "style-loader"
-              , "css-loader"
-              , "sass-loader"
-            ]
+          , "use": ["style-loader", "css-loader", "postcss-loader", "sass-loader"]
           , "exclude": /node_modules/
         }
         ,  {
@@ -136,8 +132,15 @@ module.exports = {
 
 };' > webpack.config.js
 
-# css with sass
-npm i node-sass css-loader style-loader sass-loader --save-dev
+# css with sass and autoprefixing via postcss
+npm i node-sass css-loader style-loader postcss-loader sass-loader --save-dev
+echo '
+module.exports = {
+  "plugins": [
+    require("autoprefixer")
+  ]
+};
+' > postcss.config.js
 
 # babel
 npm i babel-core babel-loader babel-preset-es2015 --save-dev
