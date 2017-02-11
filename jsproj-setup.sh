@@ -92,6 +92,7 @@ module.exports = {
 
   , "output": {
       "path": path.resolve(__dirname, "./www")
+      , "publicPath": PRODUCTION ? "/" : "http://localhost:"+DEV_SERVER_PORT+"/"
       , "filename": "[name].js"
     }
 
